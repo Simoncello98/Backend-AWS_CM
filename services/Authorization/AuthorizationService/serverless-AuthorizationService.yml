@@ -1,0 +1,184 @@
+
+service: cm-authorization
+# app and org for use with dashboard.serverless.com
+app: cm
+
+custom:
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 1
+
+
+provider:
+  name: aws
+  region: eu-central-1
+  runtime: nodejs12.x
+  versionFunctions: false
+  stage : ${env:DEPLOY_STAGE}
+  
+  environment:
+    stage : ${env:DEPLOY_STAGE}
+
+
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiRootResourceId
+
+  CMAuthorization:
+    'Fn::ImportValue': ${self:provider.stage}-CMAuthorization
+  
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: 
+        Fn::ImportValue: ${self:provider.stage}-CMAuthorizationArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: 
+        Fn::ImportValue: ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI1"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI2"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - cognito-identity:SignUp
+      - cognito-idp:AdminConfirmSignUp
+      - cognito-idp:AdminCreateUser
+      - cognito-idp:AdminListGroupsForUser
+      - cognito-idp:AdminAddUserToGroup
+      - cognito-idp:AdminGetUser
+      - cognito-idp:AdminRemoveUserFromGroup
+      - cognito-idp:ListUsers
+      - cognito-idp:ListGroups
+      Resource:
+        Fn::ImportValue: ${self:provider.stage}-CognitoUserPoolArn
+
+functions:
+    createRoute:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/createTREOPermissionRouteFunc.createTREOPermissionRoute
+        events:
+        - http:
+            cors: true
+            method: post
+            path: Authorization/RouteTREO
+
+    transactRoute:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/performToTransactWriteNavigFunc.performToTransactWriteNavig
+        events:
+        - http:
+            cors: true
+            method: post
+            path: Authorization/TransactRouteTREO
+
+    createAPI:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/createPermissionFunc.createPermissionFunc
+        events:
+        - http:
+            cors: true
+            method: post
+            path: Authorization/Functionality
+
+    transactAPI:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/performToTransactWriteGroupFunc.performToTransactWriteGroup
+        events:
+        - http:
+            cors: true
+            method: post
+            path: Authorization/TransactFunctionality
+            
+    createModule:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/createPermModuleFunc.createPermModule
+        events:
+        - http:
+            cors: true
+            method: post
+            path: Authorization/Module
+
+    getAuthorizedComponents:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/getAuthorizedComponentsFunction.getAuthorizedComponents
+        events:
+        - http:
+            cors: true
+            method: get
+            path: Authorization
+            authorizer: 
+              type: aws_iam
+
+    deleteUserFromGroup:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/deleteUserFromGroupFunc.deleteUserFromGroup
+        events:
+        - http:
+            cors: true
+            method: delete
+            path: UserXGroup
+            authorizer: 
+              type: aws_iam
+
+    listGroupsFromUser:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/listGroupsFromUserFunc.listGroupsFromUser
+        events:
+        - http:
+            cors: true
+            method: get
+            path: UserXGroup
+            authorizer: 
+              type: aws_iam
+
+    associateUserToGroup:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/associateUserToGroupFunc.associateUserToGroup
+        events:
+        - http:
+            cors: true
+            method: post
+            path: UserXGroup
+            authorizer: 
+              type: aws_iam
+
+    listCognitoGroups:
+        handler: services/Authorization/AuthorizationService/LambdaFunctions/listCognitoGroupsFunction.listCognitoGroups
+        events:
+        - http:
+            cors: true
+            method: get
+            path: UserXGroup/ListCognitoGroupsName
+            authorizer: 
+              type: aws_iam
+
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-prune-plugin

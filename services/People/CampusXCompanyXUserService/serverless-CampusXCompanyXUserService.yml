@@ -1,0 +1,246 @@
+
+service: cm-campusxcompanyxuser
+# app and org for use with dashboard.serverless.com
+app: cm
+
+custom:
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 1
+
+provider:
+  name: aws
+  region: eu-central-1
+  
+  runtime: nodejs12.x
+
+  versionFunctions: false
+  stage : ${env:DEPLOY_STAGE}
+  
+  environment:
+    stage : ${env:DEPLOY_STAGE}
+    IOTLocalCore : Local_IP_Core
+    BadgeTopic: cloud/local/badge
+    
+
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiRootResourceId
+
+  CMPeople:
+    'Fn::ImportValue': ${self:provider.stage}-CMPeople
+  
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: 
+        Fn::ImportValue: ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI1"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI2"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - cognito-identity:SignUp
+      - cognito-idp:AdminConfirmSignUp
+      - cognito-idp:AdminCreateUser
+      - cognito-idp:AdminListGroupsForUser
+      - cognito-idp:AdminAddUserToGroup
+      - cognito-idp:AdminGetUser
+      - cognito-idp:AdminRemoveUserFromGroup
+      - cognito-idp:ListUsers
+      Resource:
+        Fn::ImportValue: ${self:provider.stage}-CognitoUserPoolArn
+
+functions:
+  updateCampusXCompanyXUser:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/updateCampusXCompanyXUserFunction.updateCampusXCompanyXUser
+    events:
+      - http:
+          cors: true
+          method: put
+          path: CampusXCompanyXUser
+          authorizer:
+            type: aws_iam
+
+  deleteCampusXCompanyXUser:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/setCampusXCompanyXUserAsDeletedFunction.setCampXCompXUsrAsDel #deleteCampusXCompanyXUserFunction.deleteCampusXCompanyXUser
+    events:
+      - http:
+          cors: true
+          method: delete
+          path: CampusXCompanyXUser
+          authorizer:
+            type: aws_iam
+
+  getCampusXCompanyXUser:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCampusXCompanyXUserFunction.getCampusXCompanyXUser
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser
+          authorizer:
+            type: aws_iam
+
+  createCampusXCompanyXUser:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/createCampusXCompanyXUserFunction.createCampusXCompanyXUser
+    events:
+      - http:
+          cors: true
+          method: post
+          path: CampusXCompanyXUser
+          authorizer:
+            type: aws_iam
+
+  getCampusCompanyUsers:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCampusCompanyUsersFunction.getCampusCompanyUsers
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/CampusCompanyUsers
+          authorizer:
+            type: aws_iam
+
+  getCampusCompanyDelUsers:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCampusCompanyDeletedUsersFunction.getCampusCompanyDeletedUsers
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/CampusCompanyDeletedUsers
+          authorizer:
+            type: aws_iam
+
+  getMyCampusCompanyUser:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getMyCampCompUserFunction.getMyCampCompUser
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/MyCampusCompanyUser
+          authorizer:
+            type: aws_iam
+
+  getCampusUsers:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCampusUsersFunction.getCampusUsers
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/CampusUsers
+          authorizer:
+            type: aws_iam
+
+  getCampusVisitors:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCampusVisitorsFunction.getCampusVisitors
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/CampusVisitors
+          authorizer: 
+            type: aws_iam
+
+  getCampusDelUsers:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCampusDeletedUsersFunction.getCampusDeletedUsers
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/CampusDeletedUsers
+          authorizer:
+            type: aws_iam
+
+  getCompanyUsers:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCompanyUsersFunction.getCompanyUsers
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/CompanyUsers
+          authorizer:
+            type: aws_iam
+
+  getCompanyDelUsers:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCompanyDeletedUsersFunction.getCompanyDeletedUsers
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/CompanyDeletedUsers
+          authorizer: 
+            type: aws_iam
+
+  getUserParentCompsCamps:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getUserParentCompsAndCampsFunc.getUserParentCompsAndCamps
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/UserParentCompaniesAndCampuses
+          authorizer:
+            type: aws_iam
+
+  getUserDelParCompsCamps:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getUserDelParentCompsAndCampsFunc.getUserDelParCompsCamps
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/UserDeletedParentCompaniesAndCampuses
+          authorizer:
+            type: aws_iam
+
+  getCountCompanyUsers:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getCountCompanyUsersFunc.getCountCompanyUsers
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/CountCompanyUsers
+          authorizer:
+            type: aws_iam
+  
+  getMyCountCompanyUsers:
+    handler: services/People/CampusXCompanyXUserService/LambdaFunctions/getMyCountCompanyUsersFunc.getMyCountCompanyUsers
+    events:
+      - http:
+          cors: true
+          method: get
+          path: CampusXCompanyXUser/MyCountCompanyUsers
+          authorizer:
+            type: aws_iam
+
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-prune-plugin

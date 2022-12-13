@@ -1,0 +1,175 @@
+
+service: cm-campus
+# app and org for use with dashboard.serverless.com
+app: cm
+
+custom:
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 1
+
+provider:
+  name: aws
+  region: eu-central-1
+  
+  runtime: nodejs12.x
+
+  versionFunctions: false
+  stage : ${env:DEPLOY_STAGE}
+  
+  environment:
+    stage : ${env:DEPLOY_STAGE}
+    IOTLocalCore : Local_IP_Core
+    BadgeTopic: cloud/local/badge
+
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiRootResourceId
+
+  CMPeople:
+    'Fn::ImportValue': ${self:provider.stage}-CMPeople
+
+  S3DocumentsBucket:
+    'Fn::ImportValue': ${self:provider.stage}-S3DocumentsBucket
+  
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource:
+        Fn::ImportValue: ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI1"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI2"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - s3:PutObject
+      - s3:PutObjectAcl
+      - s3:DeleteObject
+      - s3:DeleteObjectVersion
+      - s3:PutLifeCycleConfiguration
+      - s3:GetObject
+      - s3:GetObjectAcl
+      - s3:GetObjectVersion
+      - s3:GetObjectTorrent
+      - s3:ListBucket
+      - s3:ListBucketVersions
+      - s3:ListBucketMultipartUploads
+      - s3:x-amz-grant-read
+      - s3:x-amz-grant-read-acp
+      - s3:x-amz-grant-write
+      - s3:x-amz-grant-write-acp
+      Resource: !Sub 
+        - "${bucket}/*"
+        - bucket: !ImportValue ${self:provider.stage}-S3DocumentsBucketArn
+
+functions:
+  #Campus functions and gateway
+  updateCampus:
+    handler: services/People/CampusService/LambdaFunctions/updateCampusFunction.updateCampus
+    events:
+      - http:
+          cors: true
+          method: put
+          path: Campus
+
+
+  deleteCampus:
+    handler: services/People/CampusService/LambdaFunctions/setCampusAsDeletedFunction.setCampusAsDeleted #deleteCampusFunction.deleteCampus
+    events:
+      - http:
+          cors: true
+          method: delete
+          path: Campus
+
+  getCampus:
+    handler: services/People/CampusService/LambdaFunctions/getCampusFunction.getCampus
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Campus
+
+  createCampus:
+    handler: services/People/CampusService/LambdaFunctions/createCampusFunction.createCampus
+    events:
+      - http:
+          cors: true
+          method: post
+          path: Campus
+
+
+  getAllCampuses:
+    handler: services/People/CampusService/LambdaFunctions/getAllCampusesFunction.getAllCampuses
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Campus/All
+          #authorizer:
+            # type: COGNITO_USER_POOLS
+            #authorizerId:
+              # Ref: ApiGatewayAuthorizer
+
+  getAllDeletedCampuses:
+    handler: services/People/CampusService/LambdaFunctions/getAllDeletedCampusesFunction.getAllDeletedCampuses
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Campus/AllDeleted
+          #authorizer:
+            # type: COGNITO_USER_POOLS
+            #authorizerId:
+              # Ref: ApiGatewayAuthorizer
+
+  uploadCampusLogo:
+    handler: services/People/CampusService/LambdaFunctions/uploadCampusLogoFunction.uploadCampusLogo
+    events:
+      - http:
+          cors: true
+          method: post
+          path: Campus/Logo
+
+  getAllCampusRegulations:
+        handler: services/People/CampusService/LambdaFunctions/getAllCampusRegulationsFunction.getAllCampusRegulations
+        events:
+        - http:
+            cors: true
+            method: get
+            path: Campus/Regulations
+            authorizer:
+              type: aws_iam
+
+
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-prune-plugin

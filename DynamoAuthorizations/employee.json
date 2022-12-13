@@ -1,0 +1,64 @@
+[
+    {
+        "PK": "#FUNCTIONALITY#GROUP<employee_group>",
+        "SK": "#METHOD<GET>#PATH<Company>",
+        "AdditionalData": "",
+        "APIMethod": "GET",
+        "APIPath": "Company",
+        "Functionality": "GetCompany",
+        "GroupName": "employee_group",
+        "Homepage": "",
+        "NavigationItems": "",
+        "NavigationTemplate": ""
+       },
+       {
+        "PK": "#FUNCTIONALITY#GROUP<employee_group>",
+        "SK": "#METHOD<GET>#PATH<User>",
+        "AdditionalData": "",
+        "APIMethod": "GET",
+        "APIPath": "User",
+        "Functionality": "GetUser",
+        "GroupName": "employee_group",
+        "Homepage": "",
+        "NavigationItems": "",
+        "NavigationTemplate": ""
+       },
+       {
+        "PK": "#FUNCTIONALITY#GROUP<employee_group>",
+        "SK": "#METHOD<GET>#PATH<Visitor>",
+        "AdditionalData": "",
+        "APIMethod": "GET",
+        "APIPath": "Visitor",
+        "Functionality": "GetVisitorRequest",
+        "GroupName": "employee_group",
+        "Homepage": "",
+        "NavigationItems": "",
+        "NavigationTemplate": ""
+       },
+       {
+        "PK": "#FUNCTIONALITY#GROUP<employee_group>",
+        "SK": "#METHOD<GET>#PATH<CampusXCompanyXUser>",
+        "AdditionalData": "",
+        "APIMethod": "GET",
+        "APIPath": "CampusXCompanyXUser",
+        "Functionality": "GetCampusCompanyUserRelationship",
+        "GroupName": "employee_group",
+        "Homepage": "",
+        "NavigationItems": "",
+        "NavigationTemplate": ""
+       },
+       {
+        "PK": "#FUNCTIONALITY#GROUP<employee_group>",
+        "SK": "#METHOD<GET>#PATH<Authorization>",
+        "AdditionalData": "",
+        "APIMethod": "GET",
+        "APIPath": "Authorization",
+        "Functionality": "GetNavigation",
+        "GroupName": "employee_group",
+        "Homepage": "",
+        "NavigationItems": "",
+        "NavigationTemplate": ""
+       }
+
+
+]

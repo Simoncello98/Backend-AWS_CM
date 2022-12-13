@@ -1,0 +1,26 @@
+[{
+    "PK": "#FUNCTIONALITY#GROUP<visitor_group>",
+    "SK": "#METHOD<GET>#PATH<Authorization>",
+    "AdditionalData": "",
+    "APIMethod": "GET",
+    "APIPath": "Authorization",
+    "Functionality": "GetNavigation",
+    "GroupName": "visitor_group",
+    "Homepage": "",
+    "NavigationItems": "",
+    "NavigationTemplate": ""
+   },
+   {
+    "PK": "#FUNCTIONALITY#GROUP<visitor_group>",
+    "SK": "#METHOD<GET>#PATH<Company>",
+    "AdditionalData": "",
+    "APIMethod": "GET",
+    "APIPath": "Company",
+    "Functionality": "GetCompany",
+    "GroupName": "visitor_group",
+    "Homepage": "",
+    "NavigationItems": "",
+    "NavigationTemplate": ""
+   }
+
+]

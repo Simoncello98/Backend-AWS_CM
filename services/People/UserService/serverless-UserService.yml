@@ -1,0 +1,238 @@
+
+service: cm-user
+# app and org for use with dashboard.serverless.com
+app: cm
+
+custom:
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 1
+
+provider:
+  name: aws
+  region: eu-central-1
+  
+  runtime: nodejs12.x
+
+  versionFunctions: false
+  stage : ${env:DEPLOY_STAGE}
+  
+  environment:
+    stage : ${env:DEPLOY_STAGE}
+
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiRootResourceId
+
+  CMPeople:
+    Fn::ImportValue: ${self:provider.stage}-CMPeople
+
+  CMMeal:
+    'Fn::ImportValue': ${self:provider.stage}-CMMeal
+
+  S3DocumentsBucket:
+    'Fn::ImportValue': ${self:provider.stage}-S3DocumentsBucket
+  
+  # ApiGatewayAuthorizer:
+  #  'Fn::ImportValue': ${self:provider.environment.stage}-ApiGatewayAuthorizer
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: 
+        Fn::ImportValue: ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI1"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI2"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: 
+        Fn::ImportValue: ${self:provider.stage}-CMMealArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI1"
+        - arn: !ImportValue ${self:provider.stage}-CMMealArn
+    - Effect: "Allow"
+      Action:
+      - s3:PutObject
+      - s3:PutObjectAcl
+      - s3:DeleteObject
+      - s3:DeleteObjectVersion
+      - s3:PutLifeCycleConfiguration
+      - s3:GetObject
+      - s3:GetObjectAcl
+      - s3:GetObjectVersion
+      - s3:GetObjectTorrent
+      - s3:ListBucket
+      - s3:ListBucketVersions
+      - s3:ListBucketMultipartUploads
+      - s3:x-amz-grant-read
+      - s3:x-amz-grant-read-acp
+      - s3:x-amz-grant-write
+      - s3:x-amz-grant-write-acp
+      Resource: !Sub 
+        - "${bucket}/*"
+        - bucket: !ImportValue ${self:provider.stage}-S3DocumentsBucketArn
+    - Effect: "Allow"
+      Action:
+      - cognito-identity:SignUp
+      - cognito-idp:AdminConfirmSignUp
+      - cognito-idp:AdminCreateUser
+      - cognito-idp:AdminListGroupsForUser
+      - cognito-idp:AdminAddUserToGroup
+      - cognito-idp:AdminGetUser
+      - cognito-idp:AdminRemoveUserFromGroup
+      - cognito-idp:AdminEnableUser
+      - cognito-idp:AdminDisableUser
+      - cognito-idp:AdminDeleteUser
+      - cognito-idp:ListUsers
+      Resource:
+        Fn::ImportValue: ${self:provider.stage}-CognitoUserPoolArn
+
+functions:
+  #Users functions and gateway
+  deleteUser:
+    handler: services/People/UserService/LambdaFunctions/setUserAsDeletedFunction.setUserAsDeleted #deleteUserFunction.deleteUser
+    events:
+      - http:
+          cors: true
+          method: delete
+          path: User
+          authorizer:
+            type: aws_iam
+
+  getUser:
+    handler: services/People/UserService/LambdaFunctions/getUserFunction.getUser
+    events:
+      - http:
+          cors: true
+          method: get
+          path: User
+          authorizer:
+            type: aws_iam
+
+  createUser:
+    handler: services/People/UserService/LambdaFunctions/createUserFunction.createUser
+    events:
+      - http:
+          cors: true
+          method: post
+          path: User
+          authorizer:
+            type: aws_iam
+
+  createUserWithGroup:
+    handler: services/People/UserService/LambdaFunctions/createUserWithGroupFunction.createUserWithGroup
+    events:
+      - http:
+          cors: true
+          method: post
+          path: User/WithGroup
+          authorizer:
+            type: aws_iam
+  
+  createVisitor:
+    handler: services/People/UserService/LambdaFunctions/createVisitorFunction.createVisitor
+    events:
+      - http:
+          cors: true
+          method: post
+          path: User/Visitor
+          authorizer:
+            type: aws_iam
+
+  updateUser:
+    handler: services/People/UserService/LambdaFunctions/updateUserAndRelsFunction.updateUserAndRels
+    events:
+      - http:
+          cors: true
+          method: put
+          path: User
+          authorizer:
+            type: aws_iam
+
+  updateMyTelephoneNumber:
+    handler: services/People/UserService/LambdaFunctions/updateMyTelephoneNumberFunc.updateMyTelephoneNumber
+    events:
+      - http:
+          cors: true
+          method: put
+          path: User/MyTelephoneNumber
+          authorizer:
+            type: aws_iam
+
+  updateUserTelephoneNumber:
+    handler: services/People/UserService/LambdaFunctions/updateUserTelephoneNumberFunc.updateUserTelephoneNumber
+    events:
+      - http:
+          cors: true
+          method: put
+          path: User/TelephoneNumber
+          authorizer:
+            type: aws_iam
+
+  updateMyCompanyUsers:
+    handler: services/People/UserService/LambdaFunctions/updateMyCompUsersAndRelsFunc.updateMyCompUsersAndRels
+    events:
+      - http:
+          cors: true
+          method: put
+          path: User/MyCompanyUsers
+          authorizer:
+            type: aws_iam
+
+  uploadUserPhoto:
+    handler: services/People/UserService/LambdaFunctions/uploadUserPhotoFunction.uploadUserPhoto
+    events:
+      - http:
+          cors: true
+          method: post
+          path: User/Photo
+          authorizer:
+            type: aws_iam
+
+          
+plugins:
+  - serverless-plugin-typescript
+  - serverless-prune-plugin

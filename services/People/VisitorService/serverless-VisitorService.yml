@@ -1,0 +1,244 @@
+
+service: cm-visitor
+# app and org for use with dashboard.serverless.com
+app: cm
+
+custom:
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 1
+
+provider:
+  name: aws
+  region: eu-central-1
+  runtime: nodejs12.x
+  stage : ${env:DEPLOY_STAGE}
+  versionFunctions: false
+
+  environment:
+    stage : ${env:DEPLOY_STAGE}
+  
+
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': ${self:provider.stage}-ExtApiGatewayRestApiRootResourceId
+
+  CMPeople:
+    'Fn::ImportValue': ${self:provider.stage}-CMPeople
+
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource:
+        Fn::ImportValue: ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Scan
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      Resource: !Sub 
+        - "${arn}/index/GSI2"
+        - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+    - Effect: "Allow"
+      Action:
+      - cognito-identity:SignUp
+      - cognito-idp:AdminConfirmSignUp
+      - cognito-idp:AdminCreateUser
+      - cognito-idp:AdminListGroupsForUser
+      - cognito-idp:AdminAddUserToGroup
+      - cognito-idp:AdminGetUser
+      - cognito-idp:AdminRemoveUserFromGroup
+      - cognito-idp:ListUsers
+      Resource:
+        Fn::ImportValue: ${self:provider.stage}-CognitoUserPoolArn
+    
+
+
+functions:
+  createVisitorRequest:
+    handler: services/People/VisitorService/LambdaFunctions/createVisitorRequestFunction.createVisitorRequest
+    events:
+      - http:
+          cors: true
+          method: post
+          path: Visitor
+          authorizer: 
+            type: aws_iam
+
+  getVisitorRequest:
+    handler: services/People/VisitorService/LambdaFunctions/getVisitorRequestFunction.getVisitorRequest
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor
+          authorizer:
+            type: aws_iam
+
+  updateVisitorRequest:
+    handler: services/People/VisitorService/LambdaFunctions/updateVisitorRequestFunction.updateVisitorRequest
+    events:
+      - http:
+          cors: true
+          method: put
+          path: Visitor
+          authorizer: 
+            type: aws_iam
+
+  expireVisitorRequest:
+    handler: services/People/VisitorService/LambdaFunctions/expireVisitorRequestFunction.expireVisitorRequest
+    events:
+      - http:
+          cors: true
+          method: delete
+          path: Visitor
+          authorizer: 
+            type: aws_iam
+
+  getAllVisitorRequests:
+    handler: services/People/VisitorService/LambdaFunctions/getAllVisitorReqsFunction.getAllVisitorRequest
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/All
+          authorizer: 
+            type: aws_iam
+
+  getVisitorRequestsByVisitor:
+    handler: services/People/VisitorService/LambdaFunctions/getRequestsByVisitorFunction.getByVisitor
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/ByVisitor
+          authorizer: 
+            type: aws_iam
+
+  getAllMyVisitorRequests:
+    handler: services/People/VisitorService/LambdaFunctions/getAllMyVisitorRequestsFunction.getAllMyVisitorRequests
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/MyRequests
+          authorizer: 
+            type: aws_iam
+
+  createMyVisitorRequest:
+    handler: services/People/VisitorService/LambdaFunctions/createMyVisitorRequestFunction.createMyVisitorRequest
+    events:
+      - http:
+          cors: true
+          method: post
+          path: Visitor/MyRequest
+          authorizer: 
+            type: aws_iam
+
+  expireMyVisitorRequest:
+    handler: services/People/VisitorService/LambdaFunctions/expireMyVisitorRequestFunction.expireMyVisitorRequest
+    events:
+      - http:
+          cors: true
+          method: delete
+          path: Visitor/MyRequest
+          authorizer: 
+            type: aws_iam
+
+  expireMyCompanyVisitorRequest:
+    handler: services/People/VisitorService/LambdaFunctions/expireMyCompVisitorReqsFunc.expireMyCompVisitorReqs
+    events:
+      - http:
+          cors: true
+          method: delete
+          path: Visitor/MyCompanyRequests
+          authorizer: 
+            type: aws_iam
+
+  getAllMyCompanyVisitorRequest:
+    handler: services/People/VisitorService/LambdaFunctions/getAllMyCompVisReqsFunc.getAllMyCompVisReqs
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/MyCompanyRequests
+          authorizer: 
+            type: aws_iam
+
+  getAllMyCompanyVisitorRequestByStatus:
+    handler: services/People/VisitorService/LambdaFunctions/getAllMyCompVisReqsByStatus.getAllMyCompVisReqsByStatus
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/MyCompanyRequestsByStatus
+          authorizer: 
+            type: aws_iam
+
+  getAllMyCompanyVisitorRequestByHost:
+    handler: services/People/VisitorService/LambdaFunctions/getAllMyCompVisReqsByHost.getAllMyCompVisReqsByHost
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/MyCompanyRequestsByHost
+          authorizer: 
+            type: aws_iam
+
+  getAllVisitorRequestByStatus:
+    handler: services/People/VisitorService/LambdaFunctions/getAllVisitorReqsByStatusFunc.getAllVisitorReqsByStatus
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/Status
+          authorizer: 
+            type: aws_iam
+
+  getAllVisitorRequestByHost:
+    handler: services/People/VisitorService/LambdaFunctions/getAllVisitorReqsByHostFunc.getAllVisitorReqsByHost
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/Host
+          authorizer: 
+            type: aws_iam
+
+  getAllExpectedVisitorRequests:
+    handler: services/People/VisitorService/LambdaFunctions/getAllExpectedVisitorReqsFunc.getAllExpectedVisitorReqs
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/AllExpected
+          authorizer: 
+            type: aws_iam
+
+  getAdminAllExpectedVisitorRequests:
+    handler: services/People/VisitorService/LambdaFunctions/getAdminAllExpVisitorReqsFunc.getAdminAllExpVisitorReqs
+    events:
+      - http:
+          cors: true
+          method: get
+          path: Visitor/AllExpectedForAnyStatus
+          authorizer: 
+            type: aws_iam
+
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-prune-plugin
