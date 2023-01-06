@@ -1,0 +1,99 @@
+service: cm-k3sresources
+useDotenv: true
+
+# app and org for use with dashboard.serverless.com
+app: cm
+
+
+provider:
+  name: aws
+  region: eu-central-1
+  runtime: nodejs12.x
+  stage : ${env:DEPLOY_STAGE}
+  
+
+  environment:
+    IP_TABLE : CMPeople${self:custom.stage_suffix.${self:provider.stage}, self:custom.stage_suffix.other}
+    IA_TABLE : CMAuthorization${self:custom.stage_suffix.${self:provider.stage}, self:custom.stage_suffix.other}
+    S3_BUCKET : cm-storage-bucket${self:custom.stage_suffix.${self:provider.stage}, self:custom.stage_suffix.other}
+
+custom:
+  stage_suffix:
+    dev: ""
+    other: -${self:provider.stage}
+
+resources:
+  Resources:
+    k3sLocalUser:
+      Type: AWS::IAM::User
+      Properties:
+        UserName: "k3s-${self:provider.stage}-User"
+        Policies:
+        - PolicyName: 
+            Fn::Join:
+              - ''
+              - - "k3s"
+                - '-'
+                - ${self:provider.stage}
+                - '-Policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: "Allow"
+                Action:
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                Resource:
+                  Fn::ImportValue: ${self:provider.stage}-CMPeopleArn
+              - Effect: "Allow"
+                Action:
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                Resource: !Sub 
+                  - "${arn}/index/GSI1"
+                  - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+              - Effect: "Allow"
+                Action:
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                Resource: !Sub 
+                  - "${arn}/index/GSI2"
+                  - arn: !ImportValue ${self:provider.stage}-CMPeopleArn
+              - Effect: "Allow"
+                Action:
+                - s3:PutObject
+                - s3:PutObjectAcl
+                - s3:DeleteObject
+                - s3:DeleteObjectVersion
+                - s3:PutLifeCycleConfiguration
+                - s3:GetObject
+                - s3:GetObjectAcl
+                - s3:GetObjectVersion
+                - s3:GetObjectTorrent
+                - s3:ListBucket
+                - s3:ListBucketVersions
+                - s3:ListBucketMultipartUploads
+                - s3:x-amz-grant-read
+                - s3:x-amz-grant-read-acp
+                - s3:x-amz-grant-write
+                - s3:x-amz-grant-write-acp
+                Resource: !Sub 
+                  - "${bucket}/*"
+                  - bucket: !ImportValue ${self:provider.stage}-S3DocumentsBucketArn
+    k3sUserKey:
+      Type: AWS::IAM::AccessKey
+      Properties: 
+        UserName:
+          Ref: k3sLocalUser
