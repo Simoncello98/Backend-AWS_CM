@@ -7,6 +7,11 @@ echo "\nResources\n"
 
 ./deploy-SharedResourcesMainService.sh
 
+#K8s
+echo "\nK8s\n"
+
+./deploy-k3sResourcesService.sh
+
 #CMAuthorization
 echo "\nCM - Authorization\n"
 

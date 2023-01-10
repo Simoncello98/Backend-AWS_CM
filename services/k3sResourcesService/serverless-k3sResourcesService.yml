@@ -47,6 +47,16 @@ resources:
                 - dynamodb:PutItem
                 - dynamodb:DeleteItem
                 - dynamodb:Query
+                Resource: 
+                  Fn::ImportValue: ${self:provider.stage}-CMAuthorizationArn
+              - Effect: "Allow"
+                Action:
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
                 Resource:
                   Fn::ImportValue: ${self:provider.stage}-CMPeopleArn
               - Effect: "Allow"
@@ -92,6 +102,19 @@ resources:
                 Resource: !Sub 
                   - "${bucket}/*"
                   - bucket: !ImportValue ${self:provider.stage}-S3DocumentsBucketArn
+              - Effect: "Allow"
+                Action:
+                - cognito-identity:SignUp
+                - cognito-idp:AdminConfirmSignUp
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminListGroupsForUser
+                - cognito-idp:AdminAddUserToGroup
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminRemoveUserFromGroup
+                - cognito-idp:ListUsers
+                - cognito-idp:ListGroups
+                Resource:
+                  Fn::ImportValue: ${self:provider.stage}-CognitoUserPoolArn
     k3sUserKey:
       Type: AWS::IAM::AccessKey
       Properties: 

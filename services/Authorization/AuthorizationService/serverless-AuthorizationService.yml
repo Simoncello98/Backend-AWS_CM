@@ -164,7 +164,7 @@ functions:
         - http:
             cors: true
             method: post
-            path: UserXGroup
+            path: a
             authorizer: 
               type: aws_iam
 
