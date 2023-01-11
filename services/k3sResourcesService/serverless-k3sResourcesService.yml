@@ -110,7 +110,8 @@ resources:
                   Fn::ImportValue: ${self:provider.stage}-CognitoUserPoolArn
               - Effect: "Allow"
                 Action:
-                - iam:ListAttachedRolePolicies
+                - iam:GetRolePolicy
+                - iam:ListRolePolicies
                 Resource:
                   Fn::Join:
                   - ''
