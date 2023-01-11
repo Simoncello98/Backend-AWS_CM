@@ -115,6 +115,23 @@ resources:
                 - cognito-idp:ListGroups
                 Resource:
                   Fn::ImportValue: ${self:provider.stage}-CognitoUserPoolArn
+              - Effect: "Allow"
+                Action:
+                - iam:ListAttachedRolePolicies
+                Resource:
+                  Fn::ImportValue: ${self:provider.stage}-CampusAdminRoleArn
+              - Effect: "Allow"
+                Action:
+                - iam:ListAttachedRolePolicies
+                Resource:
+                  Fn::ImportValue: ${self:provider.stage}-EmployeeRoleArn
+              - Effect: "Allow"
+                Action:
+                - iam:ListAttachedRolePolicies
+                Resource:
+                  Fn::ImportValue: ${self:provider.stage}-VisitorRoleArn
+
+                  
     k3sUserKey:
       Type: AWS::IAM::AccessKey
       Properties: 
