@@ -112,17 +112,13 @@ resources:
                 Action:
                 - iam:ListAttachedRolePolicies
                 Resource:
-                  Fn::ImportValue: ${self:provider.stage}-CampusAdminRoleArn
-              - Effect: "Allow"
-                Action:
-                - iam:ListAttachedRolePolicies
-                Resource:
-                  Fn::ImportValue: ${self:provider.stage}-EmployeeRoleArn
-              - Effect: "Allow"
-                Action:
-                - iam:ListAttachedRolePolicies
-                Resource:
-                  Fn::ImportValue: ${self:provider.stage}-VisitorRoleArn
+                  Fn::Join:
+                  - ''
+                  -
+                    - 'arn:aws:iam::'
+                    - Ref: AWS::AccountId
+                    - ':role'
+                    - '/*'
 
                   
     k3sUserKey:
